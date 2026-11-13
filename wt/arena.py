@@ -572,6 +572,9 @@ def team_arena(stage: str = "arena", policy: str | None = None, max_steps: int =
     elif stage == "arena_norule_sweep":
         # The payoff levels between 1x and 500x, plain request only, to trace the curve.
         specs = arena_specs([2, 5, 10, 50], ["neutral"], TEMPLATES[:3], rule="none")
+    elif stage == "arena_norule_more":
+        # Scenarios 4-6 at the levels that matter most, to double the sample there.
+        specs = arena_specs([1, 2, 500], ["neutral"], TEMPLATES[3:], rule="none")
     elif stage == "arena_give":
         specs = arena_specs(GIVE_R_LEVELS, ["discretion"], TEMPLATES)
     elif stage == "arena_smoke":

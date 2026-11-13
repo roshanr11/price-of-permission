@@ -25,11 +25,17 @@ MVP_MODELS = [
 ]
 
 
+def build_task(stage: str, policy: str | None = None, max_turns: int = 12):
+    if stage.startswith("arena"):
+        return team_arena(stage=stage, policy=policy)
+    return price_of_permission(stage=stage, policy=policy, max_turns=max_turns)
+
+
 def main() -> None:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawTextHelpFormatter)
-    p.add_argument("--stage", default="mvp", choices=["mvp", "mvp_group", "hard", "max", "smoke", "smoke_hard", "baseline", "arena", "arena_smoke"])
+    p.add_argument("--stage", default="mvp", choices=["mvp", "mvp_group", "hard", "max", "smoke", "smoke_hard", "baseline", "arena", "arena_defector", "arena_give", "arena_smoke"])
     p.add_argument("--models", nargs="+", default=MVP_MODELS)
-    p.add_argument("--policy", choices=["never_act", "always_maximize", "ask_first", "polite", "grab"])
+    p.add_argument("--policy", choices=["never_act", "always_maximize", "ask_first", "polite", "grab", "accept", "retaliate", "yield"])
     p.add_argument("--limit", type=int, help="run only the first N episodes per model")
     p.add_argument("--max-turns", type=int, default=12)
     p.add_argument("--max-samples", type=int, default=16, help="episodes in parallel per model")
@@ -39,10 +45,7 @@ def main() -> None:
 
     log_dir = args.log_dir or f"results/{args.stage}/logs"
     models = ["mockllm/model"] if args.policy else args.models
-    if args.stage.startswith("arena"):
-        the_task = team_arena(stage=args.stage, policy=args.policy)
-    else:
-        the_task = price_of_permission(stage=args.stage, policy=args.policy, max_turns=args.max_turns)
+    the_task = build_task(args.stage, args.policy, args.max_turns)
     logs = inspect_eval(
         the_task,
         model=models,

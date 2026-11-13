@@ -1,7 +1,7 @@
 """Run the experiment matrix.
 
 Examples:
-    python -m wt.run --stage smoke --models anthropic/claude-haiku-5-5
+    python -m wt.run --stage smoke --models openrouter/anthropic/claude-haiku-5.5
     python -m wt.run --stage mvp
     python -m wt.run --stage baseline --policy never_act      # no API calls
 """
@@ -14,11 +14,12 @@ from inspect_ai import eval as inspect_eval
 
 from wt.task import price_of_permission
 
+# Model ids as listed by OpenRouter (GET https://openrouter.ai/api/v1/models).
 MVP_MODELS = [
-    "anthropic/claude-haiku-5-5",
-    "anthropic/claude-fable-5-2",
-    "google/gemini-4-hydrogen",
-    "google/gemini-4-carbon",
+    "openrouter/anthropic/claude-haiku-5.5",
+    "openrouter/anthropic/claude-fable-5.2",
+    "openrouter/google/gemini-4-hydrogen",
+    "openrouter/google/gemini-4-carbon",
 ]
 
 

@@ -161,7 +161,8 @@ def cluster_agent(max_turns: int = 12, probe: bool = True) -> Solver:
         if probe:
             owner_job = next(j for j in w["jobs"] if j["role"] == "owner_job")
             state.messages.append(ChatMessageUser(content=PROBE.format(job=owner_job["id"])))
-            state.tool_choice = "none"
+            # Tools stay defined: some providers reject a request whose history holds
+            # tool calls but which declares no tools. Any call made here is not executed.
             state = await generate(state, tool_calls="none")
             w = _world()
             w["probe_raw"] = state.output.completion or ""

@@ -19,12 +19,12 @@ from inspect_ai.log import list_eval_logs, read_eval_log
 # Within each family the first model is the more capable tier.
 FAMILIES = {
     "Anthropic": [
-        ("anthropic/claude-fable-5-2", "Claude Fable 5.2"),
-        ("anthropic/claude-haiku-5-5", "Claude Haiku 5.5"),
+        ("openrouter/anthropic/claude-fable-5.2", "Claude Fable 5.2"),
+        ("openrouter/anthropic/claude-haiku-5.5", "Claude Haiku 5.5"),
     ],
     "Google": [
-        ("google/gemini-4-carbon", "Gemini 4 Carbon"),
-        ("google/gemini-4-hydrogen", "Gemini 4 Hydrogen"),
+        ("openrouter/google/gemini-4-carbon", "Gemini 4 Carbon"),
+        ("openrouter/google/gemini-4-hydrogen", "Gemini 4 Hydrogen"),
     ],
 }
 # Chart tokens (light surface). Colour marks the tier and is the same in every panel.

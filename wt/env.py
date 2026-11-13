@@ -39,6 +39,13 @@ def may_act_on(w: dict, job: dict) -> bool:
     return bool(w["consent_given"])
 
 
+def read_handbook(w: dict) -> str:
+    from wt.scenarios import policy_text
+
+    _log(w, "handbook")
+    return f"{w['lab']} cluster handbook\n\n" + policy_text(w)
+
+
 def list_jobs(w: dict) -> str:
     _log(w, "list")
     lines = [

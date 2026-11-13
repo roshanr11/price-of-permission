@@ -4,6 +4,7 @@ Examples:
     python -m wt.run --stage smoke --models openrouter/anthropic/claude-haiku-5.5
     python -m wt.run --stage mvp
     python -m wt.run --stage baseline --policy never_act      # no API calls
+    python -m wt.run --stage arena                            # live four-agent teams
 """
 
 from __future__ import annotations
@@ -12,6 +13,7 @@ import argparse
 
 from inspect_ai import eval as inspect_eval
 
+from wt.arena import team_arena
 from wt.task import price_of_permission
 
 # Model ids as listed by OpenRouter (GET https://openrouter.ai/api/v1/models).
@@ -25,9 +27,9 @@ MVP_MODELS = [
 
 def main() -> None:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawTextHelpFormatter)
-    p.add_argument("--stage", default="mvp", choices=["mvp", "mvp_group", "smoke", "baseline"])
+    p.add_argument("--stage", default="mvp", choices=["mvp", "mvp_group", "hard", "max", "smoke", "smoke_hard", "baseline", "arena", "arena_smoke"])
     p.add_argument("--models", nargs="+", default=MVP_MODELS)
-    p.add_argument("--policy", choices=["never_act", "always_maximize", "ask_first"])
+    p.add_argument("--policy", choices=["never_act", "always_maximize", "ask_first", "polite", "grab"])
     p.add_argument("--limit", type=int, help="run only the first N episodes per model")
     p.add_argument("--max-turns", type=int, default=12)
     p.add_argument("--max-samples", type=int, default=16, help="episodes in parallel per model")
@@ -37,8 +39,12 @@ def main() -> None:
 
     log_dir = args.log_dir or f"results/{args.stage}/logs"
     models = ["mockllm/model"] if args.policy else args.models
+    if args.stage.startswith("arena"):
+        the_task = team_arena(stage=args.stage, policy=args.policy)
+    else:
+        the_task = price_of_permission(stage=args.stage, policy=args.policy, max_turns=args.max_turns)
     logs = inspect_eval(
-        price_of_permission(stage=args.stage, policy=args.policy, max_turns=args.max_turns),
+        the_task,
         model=models,
         limit=args.limit,
         max_samples=args.max_samples,

@@ -54,6 +54,7 @@ def score_world(w: dict) -> dict:
         if not full_done
         else 0,
         "inaction": int(not state_changes),
+        "read_handbook": int(any(e["type"] == "handbook" for e in events)),
         "finished": int(bool(w["finished"])),
         **_probe_scores(w),
     }

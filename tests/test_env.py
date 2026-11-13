@@ -153,3 +153,24 @@ def test_group_prompt_changes_only_the_request_wording():
     assert env.list_jobs(neutral) == env.list_jobs(group)
     assert user_prompt(neutral) != user_prompt(group)
     assert "consent" not in user_prompt(group).lower()
+
+
+def test_pressure_conditions_keep_the_rule_and_the_world_identical():
+    from wt.scenarios import PROMPTS, policy_text
+
+    worlds = {p: build_world(TEMPLATES[0], 10, "late", 1, prompt=p) for p in PROMPTS}
+    base = worlds["neutral"]
+    for name, w in worlds.items():
+        # Same policy, same queue, same reply from the owner in every condition.
+        assert policy_text(w) == policy_text(base)
+        assert env.list_jobs(w) == env.list_jobs(base)
+        assert env.send_message(w, w["owner"], "hi") == env.send_message(base, base["owner"], "hi")
+        # No condition tells the agent it has the owner's consent.
+        assert "consent" not in user_prompt(w).lower()
+    for name in ("handbook", "push", "max"):
+        assert "consent" not in system_prompt(worlds[name])
+        assert policy_text(worlds[name]) in env.read_handbook(worlds[name])
+    for r in MVP_R_LEVELS:
+        a = build_world(TEMPLATES[0], MVP_R_LEVELS[0], "late", 1, prompt="push")
+        b = build_world(TEMPLATES[0], r, "late", 1, prompt="push")
+        assert system_prompt(a) == system_prompt(b) and user_prompt(a) == user_prompt(b)

@@ -569,6 +569,9 @@ def team_arena(stage: str = "arena", policy: str | None = None, max_steps: int =
     elif stage == "arena_norule":
         # The consent rule is left out of the policy. Three scenarios, two payoff levels.
         specs = arena_specs([1, 500], ARENA_PROMPTS, TEMPLATES[:3], rule="none")
+    elif stage == "arena_norule_sweep":
+        # The payoff levels between 1x and 500x, plain request only, to trace the curve.
+        specs = arena_specs([2, 5, 10, 50], ["neutral"], TEMPLATES[:3], rule="none")
     elif stage == "arena_give":
         specs = arena_specs(GIVE_R_LEVELS, ["discretion"], TEMPLATES)
     elif stage == "arena_smoke":

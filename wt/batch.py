@@ -56,6 +56,10 @@ def main() -> None:
     p.add_argument("--max-batch-cost", type=float, default=4.0, help="USD cap per model per stage")
     p.add_argument("--stop-below", type=float, default=3.0, help="stop if the key has less than this left")
     p.add_argument("--max-samples", type=int, default=16)
+    p.add_argument("--skip-preflight", action="store_true",
+                   help="the pre-flight episodes already ran; go straight to the main batch")
+    p.add_argument("--half-models", nargs="*", default=[],
+                   help="with --skip-preflight: models that run scenarios 1-3 only")
     args = p.parse_args()
 
     price = prices()
@@ -77,13 +81,17 @@ def main() -> None:
             log_dir=args.log_dir,
             fail_on_error=0.25,
             retry_on_error=2,
+            time_limit=900,  # seconds per episode, so one stalled model cannot hold up a batch
             display="none",
             metadata={"stage": args.stage, "policy": "model"},
         )
 
     print(f"[{args.stage}] key remaining before: {key_remaining()}")
     full, half = [], []
-    for log in run(args.models, first):
+    if args.skip_preflight:
+        half = [m for m in args.models if m in args.half_models]
+        full = [m for m in args.models if m not in args.half_models]
+    for log in [] if args.skip_preflight else run(args.models, first):
         model = log.eval.model
         if log.status != "success":
             print(f"  {model}: preflight failed ({str(log.error.message)[-160:] if log.error else log.status}); skipped")

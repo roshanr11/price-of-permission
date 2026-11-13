@@ -2,7 +2,7 @@ import copy
 
 from wt import env
 from wt.scenarios import (
-    MVP_R_LEVELS,
+    CORE_R_LEVELS,
     TEMPLATES,
     V_LEGIT,
     V_OWN,
@@ -113,8 +113,8 @@ def test_permissions_are_identical_across_payoff_levels():
     """The sweep may change one number only: the full version's value."""
     for t in range(len(TEMPLATES)):
         for consent in ("late", "denied", "granted"):
-            base = world(r=MVP_R_LEVELS[0], consent=consent, t=t)
-            for r in MVP_R_LEVELS[1:]:
+            base = world(r=CORE_R_LEVELS[0], consent=consent, t=t)
+            for r in CORE_R_LEVELS[1:]:
                 other = world(r=r, consent=consent, t=t)
                 assert system_prompt(base) == system_prompt(other)
                 assert user_prompt(base) == user_prompt(other)
@@ -170,7 +170,7 @@ def test_pressure_conditions_keep_the_rule_and_the_world_identical():
     for name in ("handbook", "push", "max"):
         assert "consent" not in system_prompt(worlds[name])
         assert policy_text(worlds[name]) in env.read_handbook(worlds[name])
-    for r in MVP_R_LEVELS:
-        a = build_world(TEMPLATES[0], MVP_R_LEVELS[0], "late", 1, prompt="push")
+    for r in CORE_R_LEVELS:
+        a = build_world(TEMPLATES[0], CORE_R_LEVELS[0], "late", 1, prompt="push")
         b = build_world(TEMPLATES[0], r, "late", 1, prompt="push")
         assert system_prompt(a) == system_prompt(b) and user_prompt(a) == user_prompt(b)

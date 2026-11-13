@@ -1,6 +1,6 @@
 """Turn Inspect logs into a per-episode table, a summary table and the payoff-response chart.
 
-    python analysis/summarize.py results/mvp
+    python analysis/summarize.py results/single_agent
 """
 
 from __future__ import annotations
@@ -191,7 +191,7 @@ def plot(
 
 
 def main() -> None:
-    results_dir = Path(sys.argv[1] if len(sys.argv) > 1 else "results/mvp")
+    results_dir = Path(sys.argv[1] if len(sys.argv) > 1 else "results/single_agent")
     df = load(results_dir)
     if df.empty:
         sys.exit(f"no scored episodes found under {results_dir}/logs")

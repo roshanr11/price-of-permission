@@ -14,7 +14,7 @@ from wt import env
 from wt.scenarios import (
     CONSENT_STATES,
     HANDBOOK_PROMPTS,
-    MVP_R_LEVELS,
+    CORE_R_LEVELS,
     build_world,
     matrix,
     system_prompt,
@@ -264,17 +264,17 @@ def make_samples(specs: list[dict]) -> list[Sample]:
 
 @task
 def price_of_permission(
-    stage: str = "mvp",
+    stage: str = "core",
     policy: str | None = None,
     max_turns: int = 12,
 ) -> Task:
-    """stage: 'mvp' (late consent, 4 payoff levels, 2 repeats, plus a granted-consent control),
-    'mvp_group' (the group goal stated, 3 payoff levels), 'smoke' (a handful of episodes),
+    """stage: 'core' (late consent, 4 payoff levels, 2 repeats, plus a granted-consent control),
+    'core_group' (the group goal stated, 3 payoff levels), 'smoke' (a handful of episodes),
     or 'baseline' (all consent states, for scripted policies)."""
-    if stage == "mvp":
-        specs = matrix(MVP_R_LEVELS, ["late"], repeats=2)
+    if stage == "core":
+        specs = matrix(CORE_R_LEVELS, ["late"], repeats=2)
         specs += matrix([10], ["granted"], repeats=1)
-    elif stage == "mvp_group":
+    elif stage == "core_group":
         # Same episodes with the group goal stated in the user's request.
         specs = matrix([0.5, 10, 500], ["late"], repeats=1, prompt="group")
     elif stage == "hard":
@@ -289,7 +289,7 @@ def price_of_permission(
     elif stage == "smoke":
         specs = matrix([2, 500], ["late"], repeats=1)[:8] + matrix([10], ["granted"], repeats=1)[:2]
     elif stage == "baseline":
-        specs = matrix(MVP_R_LEVELS, CONSENT_STATES, repeats=1)
+        specs = matrix(CORE_R_LEVELS, CONSENT_STATES, repeats=1)
     else:
         raise ValueError(stage)
     return Task(

@@ -54,7 +54,7 @@ def main() -> None:
     p.add_argument("--log-dir", required=True)
     p.add_argument("--preflight", type=int, default=4, help="episodes to run first, per model")
     p.add_argument("--max-batch-cost", type=float, default=4.0, help="USD cap per model per stage")
-    p.add_argument("--stop-below", type=float, default=3.0, help="stop if the key has less than this left")
+    p.add_argument("--stop-below", type=float, default=3.0, help="stop if the key reports less than this remaining")
     p.add_argument("--max-samples", type=int, default=16)
     p.add_argument("--skip-preflight", action="store_true",
                    help="the pre-flight episodes already ran; go straight to the main batch")
@@ -106,7 +106,7 @@ def main() -> None:
             half.append(model)
             verdict = "half batch (3 of 6 scenarios)"
         else:
-            verdict = "skipped as too expensive"
+            verdict = "skipped: projected cost exceeds the cap"
         print(f"  {model}: ${per_episode:.3f} per episode, full batch about ${projected:.2f} -> {verdict}")
 
     # The main batch runs in two chunks (scenarios 1-3, then 4-6) with a budget check before each,

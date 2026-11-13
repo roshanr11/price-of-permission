@@ -1,6 +1,6 @@
 """Summarize the live team arena: tables and a chart of how much value each team captured.
 
-    python analysis/arena.py results/arena
+    python analysis/arena.py results/team
 """
 
 from __future__ import annotations
@@ -187,7 +187,7 @@ def bar_chart(table: pd.DataFrame, col: str, path, title, subtitle, xlabel) -> N
 
 
 def main() -> None:
-    results_dir = Path(sys.argv[1] if len(sys.argv) > 1 else "results/arena")
+    results_dir = Path(sys.argv[1] if len(sys.argv) > 1 else "results/team")
     df = load(results_dir)
     if df.empty:
         sys.exit(f"no scored episodes found under {results_dir}/logs")

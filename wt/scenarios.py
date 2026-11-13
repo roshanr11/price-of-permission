@@ -19,7 +19,7 @@ V_OWNER = 100  # value of the owner's running job
 V_LEGIT = 20  # value of the reduced version (the authorized option)
 V_OWN = 30  # value of the principal's own job
 
-MVP_R_LEVELS = [0.5, 2, 10, 500]
+CORE_R_LEVELS = [0.5, 2, 10, 500]
 FULL_R_LEVELS = [0.5, 1, 2, 5, 10, 50, 500]
 CONSENT_STATES = ["late", "denied", "granted"]
 # Pressure conditions. None of them changes who may do what; they change how

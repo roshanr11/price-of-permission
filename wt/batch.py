@@ -3,7 +3,7 @@
 For each model, a few episodes run first. Their token use, priced from OpenRouter's
 public price list, gives a projected cost for the full batch. A model whose batch
 would cost more than the cap runs on half the scenarios, or is skipped if even that
-is too much. The key's remaining limit is checked before the main batch.
+is too much. The key's remaining limit is checked before each chunk of the main batch.
 
     python -m wt.batch --stage arena --models openrouter/x-ai/grok-4.7 ... --log-dir results/x/logs
 """
@@ -101,14 +101,21 @@ def main() -> None:
             verdict = "skipped as too expensive"
         print(f"  {model}: ${per_episode:.3f} per episode, full batch about ${projected:.2f} -> {verdict}")
 
-    left = key_remaining()
-    if left is not None and left < args.stop_below:
-        print(f"key has ${left:.2f} left, below the ${args.stop_below:.2f} floor; main batch not run")
-        return
-    for models, sample_ids in ((full, rest), (half, rest_half)):
-        if models and sample_ids:
-            for log in run(models, sample_ids):
-                print(f"  {log.eval.model}: {log.status}, {len(log.samples or [])} episodes")
+    # The main batch runs in two chunks (scenarios 1-3, then 4-6) with a budget check before each,
+    # so a run can never overshoot the floor by more than one chunk.
+    rest_other = [i for i in rest if i not in rest_half]
+    for label, models, sample_ids in (
+        ("scenarios 1-3", full + half, rest_half),
+        ("scenarios 4-6", full, rest_other),
+    ):
+        if not models or not sample_ids:
+            continue
+        left = key_remaining()
+        if left is not None and left < args.stop_below:
+            print(f"key reports {left:.2f} left, below the {args.stop_below:.2f} floor; {label} not run")
+            break
+        for log in run(models, sample_ids):
+            print(f"  {label}: {log.eval.model}: {log.status}, {len(log.samples or [])} episodes")
     print(f"[{args.stage}] key remaining after: {key_remaining()}")
 
 

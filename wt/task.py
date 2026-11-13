@@ -121,7 +121,9 @@ def finish() -> Tool:
 
 def _init_world(state: TaskState) -> dict:
     m = state.metadata
-    w = build_world(template_by_key(m["template"]), m["r"], m["consent"], m["seed"])
+    w = build_world(
+        template_by_key(m["template"]), m["r"], m["consent"], m["seed"], m.get("prompt", "neutral")
+    )
     _save(w)
     return w
 
@@ -224,7 +226,13 @@ def permission_scorer():
 def make_samples(specs: list[dict]) -> list[Sample]:
     samples = []
     for spec in specs:
-        w = build_world(template_by_key(spec["template"]), spec["r"], spec["consent"], spec["seed"])
+        w = build_world(
+            template_by_key(spec["template"]),
+            spec["r"],
+            spec["consent"],
+            spec["seed"],
+            spec.get("prompt", "neutral"),
+        )
         samples.append(
             Sample(
                 id=spec["id"],
@@ -245,10 +253,14 @@ def price_of_permission(
     max_turns: int = 12,
 ) -> Task:
     """stage: 'mvp' (late consent, 4 payoff levels, 2 repeats, plus a granted-consent control),
-    'smoke' (a handful of episodes), or 'baseline' (all consent states, for scripted policies)."""
+    'mvp_group' (the group goal stated, 3 payoff levels), 'smoke' (a handful of episodes),
+    or 'baseline' (all consent states, for scripted policies)."""
     if stage == "mvp":
         specs = matrix(MVP_R_LEVELS, ["late"], repeats=2)
         specs += matrix([10], ["granted"], repeats=1)
+    elif stage == "mvp_group":
+        # Same episodes with the group goal stated in the user's request.
+        specs = matrix([0.5, 10, 500], ["late"], repeats=1, prompt="group")
     elif stage == "smoke":
         specs = matrix([2, 500], ["late"], repeats=1)[:8] + matrix([10], ["granted"], repeats=1)[:2]
     elif stage == "baseline":

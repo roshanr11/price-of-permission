@@ -60,6 +60,7 @@ def load(results_dir: Path) -> pd.DataFrame:
                     "template": s.metadata["template"],
                     "r": s.metadata["r"],
                     "consent": s.metadata["consent"],
+                    "prompt": s.metadata.get("prompt", "neutral"),
                     "rep": s.metadata["rep"],
                     **scores,
                     "input_tokens": sum(u.input_tokens for u in usage.values()),
@@ -72,12 +73,13 @@ def load(results_dir: Path) -> pd.DataFrame:
 
 def summarize(df: pd.DataFrame) -> pd.DataFrame:
     out = []
-    for (model, consent, r), g in df.groupby(["model", "consent", "r"]):
+    for (model, prompt, consent, r), g in df.groupby(["model", "prompt", "consent", "r"]):
         n, k = len(g), int(g["unauthorized"].sum())
         lo, hi = wilson(k, n)
         out.append(
             {
                 "model": model,
+                "prompt": prompt,
                 "consent": consent,
                 "r": r,
                 "n": n,
@@ -93,15 +95,21 @@ def summarize(df: pd.DataFrame) -> pd.DataFrame:
                 "probe_consent_correct": g["probe_consent_correct"].astype(float).mean(),
             }
         )
-    return pd.DataFrame(out).sort_values(["model", "consent", "r"])
+    return pd.DataFrame(out).sort_values(["model", "prompt", "consent", "r"])
 
 
 def _label(r: float) -> str:
     return f"{int(r) if float(r).is_integer() else r}×"
 
 
-def plot(summary: pd.DataFrame, path: Path, consent: str = "late") -> None:
-    core = summary[summary["consent"] == consent]
+SUBTITLES = {
+    "neutral": "Owner unreachable before the deadline.",
+    "group": "Owner unreachable before the deadline; user asked for as much total value as possible.",
+}
+
+
+def plot(summary: pd.DataFrame, path: Path, consent: str = "late", prompt: str = "neutral") -> None:
+    core = summary[(summary["consent"] == consent) & (summary["prompt"] == prompt)]
     families = {
         fam: [(m, name) for m, name in models if m in set(core["model"])]
         for fam, models in FAMILIES.items()
@@ -155,8 +163,8 @@ def plot(summary: pd.DataFrame, path: Path, consent: str = "late") -> None:
     )
     fig.text(
         0.02, 0.905,
-        f"Owner unreachable before the deadline. Preliminary: n = {n} episodes per point, "
-        "one domain, bars are 95% intervals.",
+        f"{SUBTITLES[prompt]} Preliminary: n = {n} episodes per point, one domain, "
+        "bars are 95% intervals.",
         color=INK_2, fontsize=10,
     )
     fig.supxlabel(
@@ -176,7 +184,9 @@ def main() -> None:
     summary = summarize(df)
     summary.to_csv(results_dir / "summary.csv", index=False)
     plot(summary, results_dir / "uar_curve.png")
-    cols = ["model", "consent", "r", "n", "uar", "uar_lo", "uar_hi", "asked_owner", "legit_completion"]
+    if (summary["prompt"] == "group").any():
+        plot(summary, results_dir / "uar_curve_group.png", prompt="group")
+    cols = ["model", "prompt", "consent", "r", "n", "uar", "uar_lo", "uar_hi", "asked_owner", "legit_completion"]
     print(summary[cols].to_string(index=False, float_format=lambda v: f"{v:.2f}"))
     print(
         f"\n{len(df)} episodes, {df['input_tokens'].sum():,} input and "

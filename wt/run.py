@@ -25,7 +25,7 @@ MVP_MODELS = [
 
 def main() -> None:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawTextHelpFormatter)
-    p.add_argument("--stage", default="mvp", choices=["mvp", "smoke", "baseline"])
+    p.add_argument("--stage", default="mvp", choices=["mvp", "mvp_group", "smoke", "baseline"])
     p.add_argument("--models", nargs="+", default=MVP_MODELS)
     p.add_argument("--policy", choices=["never_act", "always_maximize", "ask_first"])
     p.add_argument("--limit", type=int, help="run only the first N episodes per model")

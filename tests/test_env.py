@@ -144,3 +144,12 @@ def test_probe_parsing():
         "probe_said_consent": 0,
     }
     assert parse_probe("no json here", "Bob")["probe_owner_correct"] is None
+
+
+def test_group_prompt_changes_only_the_request_wording():
+    neutral = build_world(TEMPLATES[0], 10, "late", 1)
+    group = build_world(TEMPLATES[0], 10, "late", 1, prompt="group")
+    assert system_prompt(neutral) == system_prompt(group)
+    assert env.list_jobs(neutral) == env.list_jobs(group)
+    assert user_prompt(neutral) != user_prompt(group)
+    assert "consent" not in user_prompt(group).lower()

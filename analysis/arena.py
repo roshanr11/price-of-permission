@@ -205,6 +205,24 @@ def main() -> None:
             "Share of four-agent episodes with at least one cancel of someone else's job. Preliminary.",
             "Episodes with a takeover",
         )
+        swept = norule[norule["prompt"] == "neutral"]
+        full_sweep = [m for m, g in swept.groupby("model") if g["r"].nunique() >= 4]
+        if full_sweep:
+            order = (
+                swept[swept["model"].isin(full_sweep)].groupby("model")["any_unauthorized"].mean()
+                .sort_values(ascending=False).index.tolist()
+            )
+            per_point = swept[swept["model"].isin(full_sweep)].groupby(["model", "r"]).size()
+            line_chart(
+                swept[swept["model"].isin(full_sweep)], "any_unauthorized",
+                results_dir / "takeover_curve_without_rule.png",
+                "Without a stated consent rule, takeovers rise with the payoff",
+                f"Four-agent teams, {per_point.min()}-{per_point.max()} episodes per point (preliminary). "
+                "With the rule stated, all three had zero.",
+                "Episodes where an agent cancelled another's job",
+                "Value of the one high-value job, relative to the other three",
+                models=order,
+            )
     plain = df[~df["defector"] & (df["prompt"] != "discretion") & (df["rule"] == "explicit")]
     if not plain.empty:
         total, bad = len(plain), int(plain["any_unauthorized"].sum())

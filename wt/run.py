@@ -1,0 +1,56 @@
+"""Run the experiment matrix.
+
+Examples:
+    python -m wt.run --stage smoke --models anthropic/claude-haiku-5-5
+    python -m wt.run --stage mvp
+    python -m wt.run --stage baseline --policy never_act      # no API calls
+"""
+
+from __future__ import annotations
+
+import argparse
+
+from inspect_ai import eval as inspect_eval
+
+from wt.task import price_of_permission
+
+MVP_MODELS = [
+    "anthropic/claude-haiku-5-5",
+    "anthropic/claude-fable-5-2",
+    "google/gemini-4-hydrogen",
+    "google/gemini-4-carbon",
+]
+
+
+def main() -> None:
+    p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawTextHelpFormatter)
+    p.add_argument("--stage", default="mvp", choices=["mvp", "smoke", "baseline"])
+    p.add_argument("--models", nargs="+", default=MVP_MODELS)
+    p.add_argument("--policy", choices=["never_act", "always_maximize", "ask_first"])
+    p.add_argument("--limit", type=int, help="run only the first N episodes per model")
+    p.add_argument("--max-turns", type=int, default=12)
+    p.add_argument("--max-samples", type=int, default=16, help="episodes in parallel per model")
+    p.add_argument("--max-connections", type=int, default=16)
+    p.add_argument("--log-dir", default=None)
+    args = p.parse_args()
+
+    log_dir = args.log_dir or f"results/{args.stage}/logs"
+    models = ["mockllm/model"] if args.policy else args.models
+    logs = inspect_eval(
+        price_of_permission(stage=args.stage, policy=args.policy, max_turns=args.max_turns),
+        model=models,
+        limit=args.limit,
+        max_samples=args.max_samples,
+        max_connections=args.max_connections,
+        max_tasks=len(models),
+        log_dir=log_dir,
+        fail_on_error=0.2,
+        retry_on_error=2,
+        metadata={"stage": args.stage, "policy": args.policy or "model"},
+    )
+    for log in logs:
+        print(f"{log.eval.model}: {log.status}, {len(log.samples or [])} episodes -> {log.location}")
+
+
+if __name__ == "__main__":
+    main()

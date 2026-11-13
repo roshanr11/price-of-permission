@@ -89,6 +89,8 @@ def summarize(df: pd.DataFrame) -> pd.DataFrame:
                 "uar_hi": hi,
                 "acted_without_asking": g["acted_without_asking"].mean(),
                 "asked_owner": g["asked_owner"].mean(),
+                "asked_lo": wilson(int(g["asked_owner"].sum()), n)[0],
+                "asked_hi": wilson(int(g["asked_owner"].sum()), n)[1],
                 "authorized_cancel": g["authorized_cancel"].mean(),
                 "legit_completion": g["legit_completion"].mean(),
                 "inaction": g["inaction"].mean(),
@@ -108,7 +110,20 @@ SUBTITLES = {
 }
 
 
-def plot(summary: pd.DataFrame, path: Path, consent: str = "late", prompt: str = "neutral") -> None:
+METRICS = {
+    # column, low, high, y-axis label, title
+    "uar": ("uar", "uar_lo", "uar_hi", "Episodes with an unauthorized cancel",
+            "How often does an agent cancel another user's job without consent?"),
+    "asked": ("asked_owner", "asked_lo", "asked_hi", "Episodes where the agent asked the owner",
+              "How often does an agent ask the owner before giving up on the bigger job?"),
+}
+
+
+def plot(
+    summary: pd.DataFrame, path: Path, consent: str = "late", prompt: str = "neutral",
+    metric: str = "uar",
+) -> None:
+    col, lo_col, hi_col, ylabel, title = METRICS[metric]
     core = summary[(summary["consent"] == consent) & (summary["prompt"] == prompt)]
     families = {
         fam: [(m, name) for m, name in models if m in set(core["model"])]
@@ -134,9 +149,9 @@ def plot(summary: pd.DataFrame, path: Path, consent: str = "late", prompt: str =
         for tier, (model, name) in enumerate(models):
             g = core[core["model"] == model].sort_values("r")
             x = [xs[r] + (tier - 0.5) * 0.08 for r in g["r"]]
-            y = g["uar"] * 100
+            y = g[col] * 100
             color = TIER_COLORS[tier % 2]
-            ax.vlines(x, g["uar_lo"] * 100, g["uar_hi"] * 100, color=color, lw=1.2, alpha=0.55)
+            ax.vlines(x, g[lo_col] * 100, g[hi_col] * 100, color=color, lw=1.2, alpha=0.55)
             ax.plot(
                 x, y, color=color, lw=2, marker=TIER_MARKERS[tier % 2], ms=8,
                 mec=SURFACE, mew=2, label=name, zorder=3,
@@ -152,13 +167,13 @@ def plot(summary: pd.DataFrame, path: Path, consent: str = "late", prompt: str =
         for side in ("top", "right", "left"):
             ax.spines[side].set_visible(False)
         ax.spines["bottom"].set_color(GRID)
-        leg = ax.legend(loc="upper left", frameon=False, labelcolor=INK)
+        leg = ax.legend(loc="center right", frameon=False, labelcolor=INK)
         for text in leg.get_texts():
             text.set_color(INK)
-    axes[0][0].set_ylabel("Episodes with an unauthorized cancel", color=INK_2)
+    axes[0][0].set_ylabel(ylabel, color=INK_2)
     n = int(core["n"].median())
     fig.suptitle(
-        "How often does an agent cancel another user's job without consent?",
+        title,
         x=0.02, ha="left", color=INK, fontsize=14, fontweight="bold",
     )
     fig.text(
@@ -184,6 +199,7 @@ def main() -> None:
     summary = summarize(df)
     summary.to_csv(results_dir / "summary.csv", index=False)
     plot(summary, results_dir / "uar_curve.png")
+    plot(summary, results_dir / "asked_owner_curve.png", metric="asked")
     if (summary["prompt"] == "group").any():
         plot(summary, results_dir / "uar_curve_group.png", prompt="group")
     cols = ["model", "prompt", "consent", "r", "n", "uar", "uar_lo", "uar_hi", "asked_owner", "legit_completion"]

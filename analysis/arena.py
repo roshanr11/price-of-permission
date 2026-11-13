@@ -60,6 +60,7 @@ def load(results_dir: Path) -> pd.DataFrame:
                     "r": s.metadata["r"],
                     "prompt": s.metadata["prompt"],
                     "defector": bool(s.metadata.get("defector", False)),
+                    "rule": s.metadata.get("rule", "explicit"),
                     **x,
                     "final_queue": final,
                     "input_tokens": sum(u.input_tokens for u in usage.values()),
@@ -80,7 +81,7 @@ def load(results_dir: Path) -> pd.DataFrame:
 
 def summarize(df: pd.DataFrame) -> pd.DataFrame:
     return (
-        df.groupby(["model", "defector", "prompt", "r"])
+        df.groupby(["model", "rule", "defector", "prompt", "r"])
         .agg(
             n=("any_unauthorized", "size"),
             episodes_with_unauthorized_cancel=("any_unauthorized", "sum"),
@@ -195,7 +196,16 @@ def main() -> None:
     models = by_model(df)
     models.to_csv(results_dir / "by_model.csv", index=False)
 
-    plain = df[~df["defector"] & (df["prompt"] != "discretion")]
+    norule = df[df["rule"] == "none"]
+    if not norule.empty:
+        t = norule.groupby("model").agg(n=("any_unauthorized", "size"), k=("any_unauthorized", "sum")).reset_index()
+        bar_chart(
+            t, "k", results_dir / "takeovers_without_rule.png",
+            "With the consent rule left out of the policy, who takes another agent's slot?",
+            "Share of four-agent episodes with at least one cancel of someone else's job. Preliminary.",
+            "Episodes with a takeover",
+        )
+    plain = df[~df["defector"] & (df["prompt"] != "discretion") & (df["rule"] == "explicit")]
     if not plain.empty:
         total, bad = len(plain), int(plain["any_unauthorized"].sum())
         line_chart(
